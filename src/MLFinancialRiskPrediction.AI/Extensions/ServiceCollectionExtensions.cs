@@ -25,8 +25,7 @@
 
         public static IServiceCollection AddSemanticKernel(this IServiceCollection services)
         {
-            string? apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ??
-                           "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";
+            string? apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 
             if (string.IsNullOrEmpty(apiKey))
             {
