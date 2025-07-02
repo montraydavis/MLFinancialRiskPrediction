@@ -1,0 +1,260 @@
+﻿<UserControl x:Class="MLFinancialRiskPrediction.UI.Controls.ResultDisplayControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:MLFinancialRiskPrediction.UI.Controls"
+             mc:Ignorable="d"
+             d:DesignHeight="400" d:DesignWidth="350">
+
+    <UserControl.Resources>
+        <!-- Converters -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+
+        <!-- Custom Converters -->
+        <local:BoolToStatusIconConverter x:Key="BoolToStatusIconConverter"/>
+        <local:RiskScoreToPointConverter x:Key="RiskScoreToPointConverter"/>
+        <local:RiskScoreToWidthConverter x:Key="RiskScoreToWidthConverter"/>
+        <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+
+        <!-- Card Style -->
+        <Style x:Key="ResultCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#FF252526"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+
+        <!-- Metric Value Style -->
+        <Style x:Key="MetricValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Metric Label Style -->
+        <Style x:Key="MetricLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#FFCCCCCC"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+
+        <!-- Status Badge Style -->
+        <Style x:Key="StatusBadgeStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#FF252526" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal">
+                <Border Width="32" Height="32" Background="#FFFF6B35" CornerRadius="16" Margin="0,0,12,0">
+                    <TextBlock Text="📈" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Prediction Results" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock Text="Risk analysis and approval status" FontSize="11" Foreground="#FF999999" Margin="0,1,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Results Content -->
+        <StackPanel Grid.Row="1" Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibilityConverter}}">
+
+            <!-- Main Status Card -->
+            <Border Style="{StaticResource ResultCardStyle}">
+                <StackPanel>
+                    <!-- Approval Status -->
+                    <Border Margin="0,0,0,16">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource StatusBadgeStyle}">
+                                <Setter Property="Background" Value="{Binding PredictionResult.ApprovalStatusColor}"/>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding PredictionResult.LoanApproved, Converter={StaticResource BoolToStatusIconConverter}}" 
+                                       FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding PredictionResult.ApprovalStatusText}" 
+                                       FontSize="14" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Confidence Score -->
+                    <Grid Margin="0,0,0,8">
+                        <TextBlock Text="Confidence" Style="{StaticResource MetricLabelStyle}"/>
+                        <TextBlock Text="{Binding PredictionResult.FormattedApprovalProbability}" 
+                                   Style="{StaticResource MetricValueStyle}" HorizontalAlignment="Right"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Risk Score Card -->
+            <Border Style="{StaticResource ResultCardStyle}">
+                <StackPanel>
+                    <TextBlock Text="Risk Assessment" FontSize="14" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,12"/>
+
+                    <!-- Risk Score with Gauge -->
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Risk Score" Style="{StaticResource MetricLabelStyle}"/>
+                            <TextBlock Text="{Binding PredictionResult.FormattedRiskScore}" Style="{StaticResource MetricValueStyle}"/>
+                        </StackPanel>
+
+                        <!-- Risk Score Gauge -->
+                        <Border Grid.Column="1" Width="80" Height="80" Background="#FF2D2D30" CornerRadius="40">
+                            <Canvas>
+                                <!-- Background Circle -->
+                                <Ellipse Width="70" Height="70" Canvas.Left="5" Canvas.Top="5" 
+                                         Stroke="#FF404040" StrokeThickness="6" Fill="Transparent"/>
+
+                                <!-- Progress Arc -->
+                                <Path Canvas.Left="5" Canvas.Top="5" Stroke="{Binding PredictionResult.RiskCategoryColor}" 
+                                      StrokeThickness="6" Fill="Transparent">
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="35,5">
+                                                <ArcSegment Size="35,35" IsLargeArc="False" SweepDirection="Clockwise"
+                                                           Point="{Binding PredictionResult.RiskScore, Converter={StaticResource RiskScoreToPointConverter}}"/>
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                </Path>
+
+                                <!-- Center Score -->
+                                <TextBlock Canvas.Left="20" Canvas.Top="25" Text="{Binding PredictionResult.RiskScore, StringFormat=F0}" 
+                                           FontSize="16" FontWeight="Bold" Foreground="White" TextAlignment="Center" Width="30"/>
+                            </Canvas>
+                        </Border>
+                    </Grid>
+
+                    <!-- Risk Category -->
+                    <Border CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{Binding PredictionResult.RiskCategoryColor}"/>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="{Binding PredictionResult.RiskCategoryText}" 
+                                   FontSize="11" FontWeight="Medium" Foreground="White"/>
+                    </Border>
+
+                    <!-- Risk Progress Bar -->
+                    <Grid Margin="0,12,0,0">
+                        <Border Height="8" Background="#FF2D2D30" CornerRadius="4"/>
+                        <Border Height="8" CornerRadius="4" HorizontalAlignment="Left">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{Binding PredictionResult.RiskCategoryColor}"/>
+                                    <Setter Property="Width" Value="{Binding PredictionResult.RiskScore, Converter={StaticResource RiskScoreToWidthConverter}}"/>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </Grid>
+
+                    <!-- Risk Scale Labels -->
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Low" FontSize="9" Foreground="#FF4CAF50" HorizontalAlignment="Left"/>
+                        <TextBlock Grid.Column="1" Text="Med" FontSize="9" Foreground="#FFFFC107" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="High" FontSize="9" Foreground="#FFFF9800" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="3" Text="V.High" FontSize="9" Foreground="#FFFF5722" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="4" Text="Critical" FontSize="9" Foreground="#FF9C27B0" HorizontalAlignment="Right"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Detailed Metrics Card -->
+            <Border Style="{StaticResource ResultCardStyle}">
+                <StackPanel>
+                    <TextBlock Text="Detailed Analysis" FontSize="14" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,12"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Approval Score -->
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,12">
+                            <TextBlock Text="Approval Score" Style="{StaticResource MetricLabelStyle}"/>
+                            <TextBlock Text="{Binding PredictionResult.ApprovalScore, StringFormat=F2}" 
+                                       FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                        </StackPanel>
+
+                        <!-- Risk Category Badge -->
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,12">
+                            <TextBlock Text="Category" Style="{StaticResource MetricLabelStyle}"/>
+                            <Border CornerRadius="4" Padding="6,3" HorizontalAlignment="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{Binding PredictionResult.RiskCategoryColor}"/>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding PredictionResult.RiskCategoryText}" 
+                                           FontSize="10" FontWeight="Medium" Foreground="White"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Recommendation -->
+                        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
+                            <TextBlock Text="Recommendation" Style="{StaticResource MetricLabelStyle}"/>
+                            <TextBlock FontSize="12" Foreground="#FFCCCCCC" TextWrapping="Wrap" LineHeight="16">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding PredictionResult.LoanApproved}" Value="True">
+                                                <Setter Property="Text" Value="✅ Loan approval recommended based on low risk assessment and strong financial profile."/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding PredictionResult.LoanApproved}" Value="False">
+                                                <Setter Property="Text" Value="❌ Loan approval not recommended due to elevated risk factors. Consider additional documentation or modified terms."/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- No Results Placeholder -->
+        <Border Grid.Row="1" Style="{StaticResource ResultCardStyle}" 
+                Visibility="{Binding HasResult, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.6">
+                <Border Width="64" Height="64" Background="#FF2D2D30" CornerRadius="32" Margin="0,0,0,16">
+                    <TextBlock Text="📊" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="No Prediction Results" FontSize="14" FontWeight="SemiBold" 
+                           Foreground="#FFCCCCCC" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                <TextBlock Text="Complete the form and click 'Predict Risk' to see analysis results" 
+                           FontSize="11" Foreground="#FF999999" HorizontalAlignment="Center" 
+                           TextAlignment="Center" TextWrapping="Wrap" MaxWidth="200"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

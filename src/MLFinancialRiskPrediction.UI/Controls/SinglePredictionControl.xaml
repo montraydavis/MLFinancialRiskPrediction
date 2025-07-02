@@ -1,0 +1,542 @@
+﻿<UserControl x:Class="MLFinancialRiskPrediction.UI.Controls.SinglePredictionControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:behaviors="clr-namespace:MLFinancialRiskPrediction.UI.Behaviors"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="500">
+
+    <UserControl.Resources>
+        <!-- Converters -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+
+        <!-- Input Field Styles -->
+        <Style x:Key="DarkTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="#FF2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#FF404040"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="BorderElement" Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}" Height="{TemplateBinding Height}">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BorderElement" Property="BorderBrush" Value="#FFFF6B35"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="BorderElement" Property="BorderBrush" Value="#FFFF6B35"/>
+                                <Setter TargetName="BorderElement" Property="Background" Value="#FF404040"/>
+                            </Trigger>
+                            <Trigger Property="Validation.HasError" Value="True">
+                                <Setter TargetName="BorderElement" Property="BorderBrush" Value="#FFFF5722"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DarkComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="#FF2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#FF404040"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="BorderElement" Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6" Height="{TemplateBinding Height}">
+                                <Grid Margin="{TemplateBinding Padding}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <ContentPresenter Grid.Column="0" x:Name="ContentSite" 
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                      VerticalAlignment="Center" 
+                                                      HorizontalAlignment="Left"
+                                                      IsHitTestVisible="False"/>
+
+                                    <ToggleButton Grid.Column="0" Grid.ColumnSpan="2" x:Name="ToggleButton" 
+                                                  Background="Transparent" BorderThickness="0"
+                                                  IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                  ClickMode="Press" Focusable="False">
+                                        <ToggleButton.Style>
+                                            <Style TargetType="ToggleButton">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ToggleButton">
+                                                            <Border Background="{TemplateBinding Background}" 
+                                                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                                                <ContentPresenter/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ToggleButton.Style>
+                                    </ToggleButton>
+
+                                    <Border Grid.Column="1" Width="16" Height="16" Background="#FFFF6B35" 
+                                            CornerRadius="3" Margin="6,0,0,0" IsHitTestVisible="False">
+                                        <TextBlock Text="▼" FontSize="8" Foreground="White" 
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <Popup x:Name="PART_Popup" Placement="Bottom" 
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" Focusable="False" 
+                                   PopupAnimation="Slide" StaysOpen="False">
+                                <Border Background="#FF2D2D30" BorderBrush="#FF404040" BorderThickness="1" 
+                                        CornerRadius="6" Margin="0,2,0,0" MinWidth="{TemplateBinding ActualWidth}">
+                                    <ScrollViewer x:Name="DropDownScrollViewer" MaxHeight="200" 
+                                                  VerticalScrollBarVisibility="Auto" 
+                                                  HorizontalScrollBarVisibility="Disabled"
+                                                  Background="Transparent" BorderThickness="0"
+                                                  Focusable="False">
+                                        <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="DropDownScrollViewer" Property="MinHeight" Value="95"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BorderElement" Property="BorderBrush" Value="#FFFF6B35"/>
+                                <Setter TargetName="BorderElement" Property="Background" Value="#FF2D2D30"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="BorderElement" Property="BorderBrush" Value="#FFFF6B35"/>
+                                <Setter TargetName="BorderElement" Property="Background" Value="#FF2D2D30"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="BorderElement" Property="BorderBrush" Value="#FFFF6B35"/>
+                                <Setter TargetName="BorderElement" Property="Background" Value="#FF404040"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="BorderElement" Property="Background" Value="#FF1A1A1A"/>
+                                <Setter TargetName="BorderElement" Property="BorderBrush" Value="#FF555555"/>
+                                <Setter Property="Foreground" Value="#FF999999"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DarkComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="#FF2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="BorderElement" 
+                                Background="{TemplateBinding Background}" 
+                                Padding="{TemplateBinding Padding}" 
+                                Height="{TemplateBinding Height}">
+                            <ContentPresenter Content="{TemplateBinding Content}" 
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="False"/>
+                                    <Condition Property="IsMouseOver" Value="False"/>
+                                    <Condition Property="IsKeyboardFocused" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="BorderElement" Property="Background" Value="#FF2D2D30"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BorderElement" Property="Background" Value="#FFFF6B35"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="BorderElement" Property="Background" Value="#FFFF8A5B"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="BorderElement" Property="Background" Value="#FFFF6B35"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Button Styles -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#FFFF6B35"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FFFF8A5B"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#FFE55A2B"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#FF666666"/>
+                                <Setter Property="Foreground" Value="#FF999999"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Background" Value="#FF2D2D30"/>
+            <Setter Property="Foreground" Value="#FFCCCCCC"/>
+        </Style>
+
+        <!-- Section Header Style -->
+        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Margin" Value="0,16,0,8"/>
+        </Style>
+
+        <!-- Field Label Style -->
+        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#FFCCCCCC"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#FF252526" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="32" Height="32" Background="#FFFF6B35" CornerRadius="16" Margin="0,0,12,0">
+                        <TextBlock Text="📊" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Loan Risk Prediction" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                        <TextBlock Text="Enter applicant details for analysis" FontSize="11" Foreground="#FF999999" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Loading Indicator -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Visibility="{Binding IsPredicting, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Border Width="16" Height="16" Background="#FFFF6B35" CornerRadius="8" Margin="0,0,8,0">
+                        <Border.RenderTransform>
+                            <RotateTransform x:Name="LoadingRotation"/>
+                        </Border.RenderTransform>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="Border.Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetName="LoadingRotation" 
+                                                         Storyboard.TargetProperty="Angle"
+                                                         From="0" To="360" Duration="0:0:1"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Border.Triggers>
+                    </Border>
+                    <TextBlock Text="Analyzing..." FontSize="12" Foreground="#FFCCCCCC" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Form Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0" 
+                      behaviors:ScrollViewerBehavior.SmartScrollBehavior="True">
+            <StackPanel>
+                <!-- Personal Information -->
+                <TextBlock Text="👤 Personal Information" Style="{StaticResource SectionHeaderStyle}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Row 1: Age, Experience, Dependents, Education, Employment, Marital -->
+                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,16">
+                        <TextBlock Text="Age" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,16">
+                        <TextBlock Text="Experience" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding Experience, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="4" Margin="0,0,0,16">
+                        <TextBlock Text="Dependents" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding NumberOfDependents, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="6" Margin="0,0,0,16">
+                        <TextBlock Text="Education" Style="{StaticResource FieldLabelStyle}"/>
+                        <ComboBox ItemsSource="{Binding EducationLevels}" 
+                                  SelectedItem="{Binding SelectedEducationLevel}"
+                                  Style="{StaticResource DarkComboBoxStyle}"
+                                  ItemContainerStyle="{StaticResource DarkComboBoxItemStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="8" Margin="0,0,0,16">
+                        <TextBlock Text="Employment" Style="{StaticResource FieldLabelStyle}"/>
+                        <ComboBox ItemsSource="{Binding EmploymentStatuses}" 
+                                  SelectedItem="{Binding SelectedEmploymentStatus}"
+                                  Style="{StaticResource DarkComboBoxStyle}"
+                                  ItemContainerStyle="{StaticResource DarkComboBoxItemStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="10" Margin="0,0,0,16">
+                        <TextBlock Text="Marital" Style="{StaticResource FieldLabelStyle}"/>
+                        <ComboBox ItemsSource="{Binding MaritalStatuses}" 
+                                  SelectedItem="{Binding SelectedMaritalStatus}"
+                                  Style="{StaticResource DarkComboBoxStyle}"
+                                  ItemContainerStyle="{StaticResource DarkComboBoxItemStyle}"/>
+                    </StackPanel>
+
+                    <!-- Row 2: Only Housing (centered) -->
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,16">
+                        <TextBlock Text="Housing" Style="{StaticResource FieldLabelStyle}"/>
+                        <ComboBox ItemsSource="{Binding HomeOwnershipStatuses}" 
+                                  SelectedItem="{Binding SelectedHomeOwnershipStatus}"
+                                  Style="{StaticResource DarkComboBoxStyle}"
+                                  ItemContainerStyle="{StaticResource DarkComboBoxItemStyle}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Financial Information -->
+                <TextBlock Text="💰 Financial Information" Style="{StaticResource SectionHeaderStyle}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Row 1: Annual Income, Credit Score, Monthly Debt, Credit Util, Savings, Checking -->
+                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,16">
+                        <TextBlock Text="Annual Income ($)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding AnnualIncome, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,16">
+                        <TextBlock Text="Credit Score" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding CreditScore, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="4" Margin="0,0,0,16">
+                        <TextBlock Text="Monthly Debt ($)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding MonthlyDebtPayments, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="6" Margin="0,0,0,16">
+                        <TextBlock Text="Credit Util. (%)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding CreditCardUtilizationRate, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="8" Margin="0,0,0,16">
+                        <TextBlock Text="Savings ($)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding SavingsAccountBalance, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="10" Margin="0,0,0,16">
+                        <TextBlock Text="Checking ($)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding CheckingAccountBalance, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <!-- Row 2: Credit Lines, Inquiries, Payment Hist, Credit Hist, Bankruptcy, Prev Defaults -->
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,16">
+                        <TextBlock Text="Credit Lines" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding NumberOfOpenCreditLines, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,16">
+                        <TextBlock Text="Inquiries" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding NumberOfCreditInquiries, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="4" Margin="0,0,0,16">
+                        <TextBlock Text="Payment Hist. (%)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding PaymentHistory, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="6" Margin="0,0,0,16">
+                        <TextBlock Text="Credit Hist. (yrs)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding LengthOfCreditHistory, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="8" Margin="0,0,0,16">
+                        <TextBlock Text="Bankruptcy" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding BankruptcyHistory, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="10" Margin="0,0,0,16">
+                        <TextBlock Text="Prev. Defaults" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding PreviousLoanDefaults, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Loan Information -->
+                <TextBlock Text="🏦 Loan Information" Style="{StaticResource SectionHeaderStyle}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,16">
+                        <TextBlock Text="Loan Amount ($)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding LoanAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,8,16">
+                        <TextBlock Text="Duration (months)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding LoanDuration, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="2" Margin="8,0,8,16">
+                        <TextBlock Text="Interest Rate (%)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding InterestRate, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource DarkTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="3" Margin="8,0,0,16">
+                        <TextBlock Text="Monthly Payment ($)" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding MonthlyLoanPayment, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" 
+                                 Style="{StaticResource DarkTextBoxStyle}" IsReadOnly="True"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,0,0,16">
+                        <TextBlock Text="Loan Purpose" Style="{StaticResource FieldLabelStyle}"/>
+                        <ComboBox ItemsSource="{Binding LoanPurposes}" 
+                                  SelectedItem="{Binding SelectedLoanPurpose}"
+                                  Style="{StaticResource DarkComboBoxStyle}"
+                                  ItemContainerStyle="{StaticResource DarkComboBoxItemStyle}"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Action Buttons -->
+        <Grid Grid.Row="2" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Content="Predict Risk" Command="{Binding PredictCommand}"
+                    Style="{StaticResource PrimaryButtonStyle}"/>
+
+            <Button Grid.Column="2" Content="Reset Form" Command="{Binding ResetCommand}"
+                    Style="{StaticResource SecondaryButtonStyle}"/>
+
+            <Button Grid.Column="4" Content="Clear Result" Command="{Binding ClearResultCommand}"
+                    Style="{StaticResource SecondaryButtonStyle}" Width="100"
+                    Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        </Grid>
+    </Grid>
+</UserControl>
